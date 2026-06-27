@@ -1,0 +1,40 @@
+name: Setup release signing
+description: Decode the release keystore and configure Gradle signing properties for CI.
+
+inputs:
+  keystore-base64:
+    description: Base64-encoded webviewapp-release.keystore
+    required: false
+    default: ''
+  keystore-password:
+    description: Keystore password
+    required: false
+    default: ''
+  key-alias:
+    description: Key alias
+    required: false
+    default: ''
+  key-password:
+    description: Key password
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Configure release signing
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.keystore-base64 }}" ]; then
+          echo "No release keystore configured; Gradle will use debug signing."
+          exit 0
+        fi
+
+        echo "${{ inputs.keystore-base64 }}" | base64 --decode > android/app/webviewapp-release.keystore
+
+        {
+          echo "ORG_GRADLE_PROJECT_MYAPP_UPLOAD_STORE_FILE=webviewapp-release.keystore"
+          echo "ORG_GRADLE_PROJECT_MYAPP_UPLOAD_STORE_PASSWORD=${{ inputs.keystore-password }}"
+          echo "ORG_GRADLE_PROJECT_MYAPP_UPLOAD_KEY_ALIAS=${{ inputs.key-alias }}"
+          echo "ORG_GRADLE_PROJECT_MYAPP_UPLOAD_KEY_PASSWORD=${{ inputs.key-password }}"
+        } >> "$GITHUB_ENV"
